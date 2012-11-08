@@ -22,7 +22,9 @@ exports.test = {
     var configPath = path.join(__dirname, 'MockConfig.json');
     
     test.store = {
-      router: new Router(configPath, FileHandler),
+      router: new Router(configPath, FileHandler, function () {
+        test['before each'] = true;
+      }),
       config: JSON.parse(fs.readFileSync(configPath, 'utf8')) 
     };
   },
@@ -51,14 +53,11 @@ exports.test = {
   'test parse handler': function (test) {
     var done = false;
     
-    var store = test.store;
-    var router = store.router;
-    
     var output = null;
+    var configPath = path.join(__dirname, 'MockConfig.json');    
 
-    Router.parse(path.join(__dirname, 'MockConfig.json'), function (options) {
-      output = options;
-      
+    Router.parse(configPath, function (options) {
+      output = options;      
       done = true;
     });
     
@@ -68,7 +67,7 @@ exports.test = {
       },
       function () {
         var methods = output.methods;
-        var handlers = output.handlers;
+        var handlers = output.handlers;        
 
         test.assert(methods.get, 'methods should have "get" property');
         test.assert(methods.post, 'methods should have "post" property');
@@ -90,22 +89,14 @@ exports.test = {
           handlerCount++;
         }
 
-        test.assert(handlerCount > 0, 'Handler in output should not empty');
-
-        // Count router handlers
-        var routerHandlerCount = 0;
-        for (key in router.handlers) {
-          routerHandlerCount++;
-        }
-        test.assertEqual(routerHandlerCount, handlerCount, 'Router handler should equal to parser handler.');
+        test.assert(handlerCount > 0, 'Handler in output should not empty');       
+        //GuardHandler, MockSessionHandler, MockAccountHandler, MockDefaultHandler, RenderHandler         
+        test.assertEqual(5, handlerCount, 'Router handler should equal to 5.');
       });
   },
   
   'test parse model': function (test) {
     var done = false;
-    
-    var store = test.store;
-    var router = store.router;
     
     var output = null;
     
@@ -134,12 +125,8 @@ exports.test = {
       });
   },
 
-  'test parse filter': function (test) {
-    
-    var done = false;
-    
-    var store = test.store;
-    var router = store.router;
+  'test parse filter': function (test) {    
+    var done = false; 
     
     var output = null;
     
@@ -159,20 +146,25 @@ exports.test = {
     
   },
   
-  'test get verifySession': function (test) {
-    
+  'test get verifySession': function (test) {    
     var store = test.store;
-    var router = store.router;
+    var router = store.router;    
+
+    test.waitFor(
+      function (time) {
+        return test['before each'] || time > timeout;
+      },
+      function () {        
+        var action = router.request('GET', '/verifySession');
     
-    var action = router.request('GET', '/verifySession');
-    
-    var request = new MockRequest('GET', '/verifySession');
-    var response = new MockResponse();
-    
-    action(request, response);
-    
-    test.assertEqual('Session verify', response.message);
-    
+        var request = new MockRequest('GET', '/verifySession');
+        var response = new MockResponse();
+        
+        action(request, response);
+        
+        test.assertEqual('Session verify', response.message);
+      }
+    );        
   },
   
   'test post verifySession': function (test) {
@@ -180,15 +172,21 @@ exports.test = {
     var store = test.store;
     var router = store.router;
     
-    var action = router.request('POST', '/verifySession');
-    
-    var request = new MockRequest('POST', '/verifySession');
-    var response = new MockResponse();
-    
-    action(request, response);
-    
-    test.assertEqual('Session verify', response.message);
-    
+    test.waitFor(
+      function (time) {
+        return test['before each'] || time > timeout;
+      },
+      function () {
+        var action = router.request('POST', '/verifySession');
+        
+        var request = new MockRequest('POST', '/verifySession');
+        var response = new MockResponse();
+        
+        action(request, response);
+        
+        test.assertEqual('Session verify', response.message);
+      }
+    );        
   },
   
   'test get file via router': function (test) {
@@ -198,28 +196,35 @@ exports.test = {
     
     var done = false;
     
-    var action = router.request('GET', '/sample.txt');
-    
-    var request = new MockRequest('GET', '/sample.txt');
-    var response = new MockResponse(
-      function () {
-        done = true;
-      });
-      
-    action(request, response);
-      
     test.waitFor(
       function (time) {
-        return done || time > timeout;
+        return test['before each'] || time > timeout;
       },
       function () {
-        
-        var samplePath = path.join(__dirname, 'client', 'sample.txt');
-        var sample = fs.readFileSync(samplePath, 'utf8');
-        test.assertEqual(200, response.statusCode);
-        test.assertEqual(sample, response.message);
-        
-      });
+        var action = router.request('GET', '/sample.txt');
+    
+        var request = new MockRequest('GET', '/sample.txt');
+        var response = new MockResponse(
+          function () {
+            done = true;
+          });
+          
+        action(request, response);
+          
+        test.waitFor(
+          function (time) {
+            return done || time > timeout;
+          },
+          function () {
+            
+            var samplePath = path.join(__dirname, 'client', 'sample.txt');
+            var sample = fs.readFileSync(samplePath, 'utf8');
+            test.assertEqual(200, response.statusCode);
+            test.assertEqual(sample, response.message);
+            
+          });
+      }
+    );    
     
   },
   
@@ -230,23 +235,30 @@ exports.test = {
     
     var done = false;
     
-    var action = router.request('GET', '/test6');
-    var request = new MockRequest('GET', '/test6');
-    var response = new MockResponse(
-      function() {
-        done = true;
-      });
-      
-    action (request, response);
-    
     test.waitFor(
-      function(time) { 
-        return done || time > timeout;
+      function (time) {
+        return test['before each'] || time > timeout;
       },
-      function() { 
-        test.assertEqual(200, response.statusCode);
-        test.assertEqual(JSON.stringify({ action: true, message: 'success' }), response.message);
-      });
+      function () {
+        var action = router.request('GET', '/test6');
+        var request = new MockRequest('GET', '/test6');
+        var response = new MockResponse(
+          function() {
+            done = true;
+          });
+          
+        action (request, response);
+        
+        test.waitFor(
+          function(time) { 
+            return done || time > timeout;
+          },
+          function() { 
+            test.assertEqual(200, response.statusCode);
+            test.assertEqual(JSON.stringify({ action: true, message: 'success' }), response.message);
+          });  
+      }
+    );    
     
   },
   
@@ -257,30 +269,37 @@ exports.test = {
     
     var done = false;
     
-    var request = new MockRequest('GET', '/sample.txt');
-    request.connection = { remoteAddress: '127.0.0.1' };
-    
-    var response = new MockResponse(
-      function () {
-        done = true;
-      });
-    
-    router.invoke(request, response);
-    
     test.waitFor(
       function (time) {
-        return done || time > timeout;
+        return test['before each'] || time > timeout;
       },
       function () {
-        var samplePath = path.join(__dirname, 'client', 'sample.txt');
-        var sample = fs.readFileSync(samplePath, 'utf8');
-        test.assertEqual(200, response.statusCode);
-        test.assertEqual(sample, response.message);
+        var request = new MockRequest('GET', '/sample.txt');
+        request.connection = { remoteAddress: '127.0.0.1' };
         
-        var filters = router.filters;
-        test.assert(filters[1].invoke, 'Router should invoke filter');
+        var response = new MockResponse(
+          function () {
+            done = true;
+          });
         
-      });
+        router.invoke(request, response);
+        
+        test.waitFor(
+          function (time) {
+            return done || time > timeout;
+          },
+          function () {
+            var samplePath = path.join(__dirname, 'client', 'sample.txt');
+            var sample = fs.readFileSync(samplePath, 'utf8');
+            test.assertEqual(200, response.statusCode);
+            test.assertEqual(sample, response.message);
+            
+            var filters = router.filters;
+            test.assert(filters[1].invoke, 'Router should invoke filter');
+            
+          });  
+      }
+    );
     
   },
     
@@ -289,26 +308,33 @@ exports.test = {
     var router = new Router(path.join(__dirname, 'MockNoFilterConfig.json'), FileHandler);
     var done = false;
     
-    var request = new MockRequest('GET', '/sample.txt');
-    request.connection = { remoteAddress: '127.0.0.1' };
-    
-    var response = new MockResponse(
-      function () {
-        done = true;
-      });
-    
-    router.invoke(request, response);
-    
     test.waitFor(
       function (time) {
-        return done || time > timeout;
+        return test['before each'] || time > timeout;
       },
       function () {
-        var samplePath = path.join(__dirname, 'client', 'sample.txt');
-        var sample = fs.readFileSync(samplePath, 'utf8');
-        test.assertEqual(200, response.statusCode);
-        test.assertEqual(sample, response.message);
-      });
+        var request = new MockRequest('GET', '/sample.txt');
+        request.connection = { remoteAddress: '127.0.0.1' };
+        
+        var response = new MockResponse(
+          function () {
+            done = true;
+          });
+        
+        router.invoke(request, response);
+        
+        test.waitFor(
+          function (time) {
+            return done || time > timeout;
+          },
+          function () {
+            var samplePath = path.join(__dirname, 'client', 'sample.txt');
+            var sample = fs.readFileSync(samplePath, 'utf8');
+            test.assertEqual(200, response.statusCode);
+            test.assertEqual(sample, response.message);
+          });  
+      }
+    );    
     
   },
   
@@ -316,26 +342,33 @@ exports.test = {
     var router = new Router(path.join(__dirname, 'MockEmptyConfig.json'), FileHandler);
     var done = false;
     
-    var request = new MockRequest('GET', '/sample.txt');
-    request.connection = { remoteAddress: '127.0.0.1' };
-    
-    var response = new MockResponse(
-      function () {
-        done = true;
-      });
-    
-    router.invoke(request, response);
-    
     test.waitFor(
       function (time) {
-        return done || time > timeout;
+        return test['before each'] || time > timeout;
       },
       function () {
-        var samplePath = path.join(__dirname, 'client', 'sample.txt');
-        var sample = fs.readFileSync(samplePath, 'utf8');
-        test.assertEqual(200, response.statusCode);
-        test.assertEqual(sample, response.message);
-      });
+        var request = new MockRequest('GET', '/sample.txt');
+        request.connection = { remoteAddress: '127.0.0.1' };
+        
+        var response = new MockResponse(
+          function () {
+            done = true;
+          });
+        
+        router.invoke(request, response);
+        
+        test.waitFor(
+          function (time) {
+            return done || time > timeout;
+          },
+          function () {
+            var samplePath = path.join(__dirname, 'client', 'sample.txt');
+            var sample = fs.readFileSync(samplePath, 'utf8');
+            test.assertEqual(200, response.statusCode);
+            test.assertEqual(sample, response.message);
+          });  
+      }
+    );
   },
   
   'test invoke unsupport method': function (test) {
@@ -344,23 +377,30 @@ exports.test = {
     
     var done = false;
     
-    var request = new MockRequest('HEAD', '/verifySession');
-    request.connection = { remoteAddress: '127.0.0.1' };
-    
-    var response = new MockResponse(
-      function () {
-        done = true;
-      });
-    
-    router.invoke(request, response);
-    
     test.waitFor(
       function (time) {
-        return done || time > timeout;
+        return test['before each'] || time > timeout;
       },
       function () {
-        test.assertEqual(404, response.statusCode);
-      });
+        var request = new MockRequest('HEAD', '/verifySession');
+        request.connection = { remoteAddress: '127.0.0.1' };
+        
+        var response = new MockResponse(
+          function () {
+            done = true;
+          });
+        
+        router.invoke(request, response);
+        
+        test.waitFor(
+          function (time) {
+            return done || time > timeout;
+          },
+          function () {
+            test.assertEqual(404, response.statusCode);
+          });  
+      }
+    );    
   }
   
 };

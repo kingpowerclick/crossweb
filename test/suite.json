@@ -1,0 +1,8 @@
+{
+  "name": "Crossweb test suite",
+  "verbose": true,
+  "suite": [{
+    "file": ".",
+    "name": "Integration Test"
+  }]
+}

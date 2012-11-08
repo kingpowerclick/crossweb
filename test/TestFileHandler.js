@@ -93,7 +93,7 @@ exports.test = {
         return done || time > timeout;
       },
       function () {
-        test.assertEqual(404, response.statusCode);
+        test.assertEqual(301, response.statusCode);
       });
     
   },

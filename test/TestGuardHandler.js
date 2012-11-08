@@ -43,7 +43,7 @@ exports.test = {
       function () {
         test.assertEqual(302, response.statusCode, 
           'Response should redirect to somewhere');
-        test.assertEqual('/index', response.header.Location,
+        test.assert(response.header.Location.match(/^\/index/),
           'GuardHandler should redirect to index after authenticate success');
                 
         test.assert(response.header['Set-Cookie'], 
@@ -123,7 +123,7 @@ exports.test = {
       function () {
         test.assertEqual(302, response.statusCode, 
           'Response should redirect to somewhere');
-        test.assertEqual('/index', response.header.Location,
+        test.assert(response.header.Location.match(/^\/index/),
           'GuardHandler should redirect to index after authenticate success');
         
         test.assert(response.header['Set-Cookie'], 
@@ -154,7 +154,7 @@ exports.test = {
       function () {
         test.assertEqual(302, response.statusCode, 
           'Response should redirect to somewhere');
-        test.assertEqual('/index', response.header.Location,
+        test.assert(response.header.Location.match(/^\/index/),
           'GuardHandler should redirect to index after authenticate success');
         
         test.assert(response.header['Set-Cookie'], 

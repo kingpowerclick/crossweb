@@ -32,7 +32,7 @@ exports.test = {
       },
       function () {
         test.assertEqual(200, response.statusCode);
-        test.assertEqual('text/html', response.header['Content-Type']);
+        test.assertEqual('text/html; charset=UTF-8', response.header['Content-Type']);
         test.assertEqual('<h1>llun</h1>', response.message);
       });
   },
