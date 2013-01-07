@@ -23,6 +23,11 @@ exports.test = {
     
     var done = false;
     var request = new MockRequest('POST', '/authenticate');
+
+    request.headers = {
+      'user-agent': 'unit test'
+    }
+
     request.body = {
       username: 'admin@sample',
       password: '1password;',
@@ -57,6 +62,11 @@ exports.test = {
     
     var done = false;
     var request = new MockRequest('POST', '/authenticate');
+
+    request.headers = {
+      'user-agent': 'unit test'
+    }
+    
     request.body = {
       username: 'admin@sample',
       password: 'wrongpassword',
