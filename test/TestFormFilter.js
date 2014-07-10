@@ -1,4 +1,5 @@
-var path = require('path');
+var path = require('path'),
+    util = require('util');
 
 var FormFilter = require('../lib/filters/FormFilter').FormFilter;
 
@@ -283,6 +284,7 @@ exports.test = {
     var request = new MockRequest('POST', '/sample?message=man', {
       'content-type': 'application/x-www-form-urlencoded'
     });
+
     FormFilter.check(request, function () {
       done = true;
     });
@@ -318,7 +320,8 @@ exports.test = {
     var done = false;
     
     var request = new MockRequest('POST', '/test', {
-      'content-type': 'multipart/form-data; boundary=----boundary'
+      'content-type': 'multipart/form-data; boundary=----boundary',
+      'content-length': 10
     });
     FormFilter.check(request, function () {
       done = true;
@@ -368,7 +371,8 @@ exports.test = {
     var done = false;
     
     var request = new MockRequest('POST', '/test?book=1', {
-      'content-type': 'multipart/form-data; boundary=----boundary'
+      'content-type': 'multipart/form-data; boundary=----boundary',
+      'content-length': 10
     });
     FormFilter.check(request, function () {
       done = true;
@@ -384,12 +388,12 @@ exports.test = {
                         'Hello, World\r\n' +
                         '------boundary\r\n' +
                         'Content-Disposition: form-data; name="file1"; filename="sample.txt"\r\n' +
-                        'Content-Type: text/plain\r\n' +
+                        'Content-Type: text/plain\r\n' +                        
                         '\r\n' +
                         'Hello, World\r\n' +
                         '------boundary\r\n' +
                         'Content-Disposition: form-data; name="file2"; filename="sample2.txt"\r\n' +
-                        'Content-Type: text/plain\r\n' +
+                        'Content-Type: text/plain\r\n' +                        
                         '\r\n' +
                         'Hello, World\r\n' +
                         '------boundary--\r\n';
